@@ -1,7 +1,3 @@
-"""main.py - Manages data loaders and starts the training.
-
-Usage:  python main.py --image_dir data/xray --mask_dir data/mask --csv_dir data/CSV
-"""
 import json
 import os
 

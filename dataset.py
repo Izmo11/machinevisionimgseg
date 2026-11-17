@@ -1,4 +1,3 @@
-"""dataset.py - Loads images and prepares training data entries."""
 import numpy as np
 import torch
 from PIL import Image
@@ -6,8 +5,6 @@ from torch.utils.data import Dataset
 
 
 def read_image(path, size, mode="RGB"):
-    """mode: 'RGB' | 'L' for images, 'mask' for label masks (nearest-neighbour resize).
-    Returns float32 HxWxC in [0,1] for images, int64 HxW for masks."""
     if mode == "mask":
         img = Image.open(path).convert("L").resize((size, size), Image.NEAREST)
         return np.array(img, dtype=np.int64)
@@ -40,12 +37,12 @@ class SegmentationDataset(Dataset):
     def __getitem__(self, i):
         img_path, mask_path = self.pairs[i]
         img = read_image(img_path, self.size, self.mode)
-        if mask_path is None:                       # unlabeled image: dummy mask, never used for metrics
+        if mask_path is None:                       
             mask = np.zeros((self.size, self.size), dtype=np.int64)
         else:
             mask = read_image(mask_path, self.size, "mask")
             if self.num_classes == 1:
-                # works for both {0,1} and {0,255} masks (and tolerates slight JPEG noise on 0/255 masks)
+                # works for both {0,1} and {0,255} masks
                 thr = 0 if mask.max() <= 1 else 127
                 mask = (mask > thr).astype(np.int64)
         if self.augment:

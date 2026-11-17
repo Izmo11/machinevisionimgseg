@@ -1,10 +1,3 @@
-"""evaluate.py - Final evaluation on the test images.
-
-* test images WITH masks    -> metrics (Dice, IoU, ...) + per-image CSV
-* test images WITHOUT masks -> predicted masks are saved (no score possible)
-
-Usage:  python evaluate.py --output_dir outputs
-"""
 import csv
 import json
 import os

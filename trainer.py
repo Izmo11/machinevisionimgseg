@@ -1,4 +1,3 @@
-"""trainer.py - Model initialization, training loop and validation loop."""
 import json
 import os
 

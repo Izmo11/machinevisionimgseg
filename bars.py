@@ -4,7 +4,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 
-# Check the row counts of the final updated CSV files
+
 paths = {
     'Data': 'data/CSVs/train.csv',
     'Train': 'data/CSVs/train.csv',

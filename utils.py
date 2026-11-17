@@ -1,4 +1,3 @@
-"""utils.py - Helper functions: seeding, file pairing, data split, loss, metrics, I/O."""
 import csv
 import io
 import json
@@ -25,7 +24,6 @@ def get_device():
 
 
 def list_pairs(image_dir, mask_dir):
-    """Match every image with the mask that has the same file stem. Images without a mask are skipped."""
     masks = {os.path.splitext(f)[0]: f for f in os.listdir(mask_dir)
              if os.path.splitext(f)[1].lower() in IMG_EXT}
     pairs, skipped = [], []
@@ -44,7 +42,6 @@ def list_pairs(image_dir, mask_dir):
 
 
 def make_split(pairs, n_train, n_test, val_frac, seed):
-    """Random, reproducible split: n_train (-> train+val) and n_test held-out test images."""
     if len(pairs) < n_train + n_test:
         raise ValueError(f"Need {n_train + n_test} pairs, found {len(pairs)}")
     idx = list(range(len(pairs)))
@@ -57,7 +54,6 @@ def make_split(pairs, n_train, n_test, val_frac, seed):
 
 
 def load_or_create_split(path, pairs, n_train, n_test, val_frac, seed):
-    """Re-use an existing split.json so the test set never changes between runs."""
     if os.path.exists(path):
         with open(path) as f:
             return json.load(f)
@@ -69,7 +65,6 @@ def load_or_create_split(path, pairs, n_train, n_test, val_frac, seed):
 
 # ---------------------------------------------------------------- CSV split
 def _index(directory):
-    """file stem -> full path for every image file in a folder."""
     return {os.path.splitext(f)[0]: os.path.join(directory, f)
             for f in sorted(os.listdir(directory)) if os.path.splitext(f)[1].lower() in IMG_EXT}
 
@@ -81,7 +76,6 @@ def _stem(value):
 
 
 def read_csv_rows(path):
-    """Returns (column_names, rows). Handles ; or tab delimiters, BOM and header-less files."""
     with open(path, newline="", encoding="utf-8-sig") as f:
         text = f.read()
     try:
@@ -96,8 +90,6 @@ def read_csv_rows(path):
 
 
 def _resolve(value, index, csv_path):
-    """CSV value -> real file. Prefer the path as written (also relative to the CSV's folder / its parent),
-    otherwise fall back to a lookup by file stem in the image or mask folder."""
     v = str(value).strip().replace("\\", "/")
     csv_dir = os.path.dirname(os.path.abspath(csv_path))
     for cand in (v, os.path.join(csv_dir, v), os.path.join(os.path.dirname(csv_dir), v)):
@@ -124,7 +116,6 @@ def pairs_from_csv(path, image_index, mask_index, image_col=None, mask_col=None,
                 return ci
         return None
 
-    # ---- image column: --image_col, then header hint, then best match against the image folder
     if image_col:
         ic = names.index(image_col)
     else:
@@ -134,7 +125,6 @@ def pairs_from_csv(path, image_index, mask_index, image_col=None, mask_col=None,
             if stem_hits(ic, image_index) < 0.5 and file_hits(ic) < 0.5:
                 raise ValueError(f"{path}: cannot tell which column holds the images. Columns: {names}. "
                                  f"Use --image_col.")
-    # ---- mask column: --mask_col, then header hint, then a column matching the mask folder / existing files
     if mask_col:
         mc = names.index(mask_col)
     else:
@@ -152,7 +142,7 @@ def pairs_from_csv(path, image_index, mask_index, image_col=None, mask_col=None,
             missing.append(r[ic]); continue
         if mc is not None:
             raw = r[mc].strip() if mc < len(r) else ""
-            if raw == "" and allow_no_mask:      # unlabeled image (e.g. test set without ground truth)
+            if raw == "" and allow_no_mask:     
                 pairs.append([img, None]); continue
             m = _resolve(raw, mask_index, path)
         else:
@@ -173,7 +163,6 @@ def pairs_from_csv(path, image_index, mask_index, image_col=None, mask_col=None,
 
 
 def _find_csv(csv_dir, preferred, aliases):
-    """Case-insensitive lookup: exact name first, then common alternatives (val.csv, Valid.csv, ...)."""
     files = {f.lower(): f for f in os.listdir(csv_dir) if f.lower().endswith(".csv")}
     if preferred.lower() in files:
         return os.path.join(csv_dir, files[preferred.lower()])
@@ -185,8 +174,7 @@ def _find_csv(csv_dir, preferred, aliases):
 
 
 def split_from_csvs(args):
-    """Build {'train','val','test'} pair lists from the CSV files.
-    Returns None only if the CSV folder itself does not exist (-> random split)."""
+
     if not os.path.isdir(args.csv_dir):
         return None
     paths = {
@@ -209,7 +197,7 @@ def split_from_csvs(args):
     return split
 
 
-# ---------------------------------------------------------------- loss
+#  loss
 class DiceCELoss(nn.Module):
     """Cross-entropy (BCE for binary) + soft Dice. Targets are (B,H,W) long class ids."""
 
@@ -232,7 +220,7 @@ class DiceCELoss(nn.Module):
         return ce + dice
 
 
-# ---------------------------------------------------------------- metrics
+# metrics
 def predict(logits, num_classes, threshold=0.5):
     if num_classes == 1:
         return (torch.sigmoid(logits) > threshold).long().squeeze(1)
@@ -240,7 +228,6 @@ def predict(logits, num_classes, threshold=0.5):
 
 
 def seg_metrics(pred, target, num_classes, eps=1e-7):
-    """Per-image metrics, averaged over foreground classes. pred/target: (B,H,W) long."""
     classes = [1] if num_classes == 1 else list(range(1, num_classes))
     d, i, pr, rc = [], [], [], []
     for c in classes:

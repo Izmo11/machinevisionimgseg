@@ -1,4 +1,3 @@
-"""args.py - Defines arguments for configuring the pipeline."""
 import argparse
 
 

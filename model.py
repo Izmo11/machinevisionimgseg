@@ -1,4 +1,3 @@
-"""model.py - Defines the neural network architecture (U-Net)."""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -33,7 +32,6 @@ class Up(nn.Module):
 
 
 class UNet(nn.Module):
-    """Classic 4-level U-Net. Output = raw logits (num_classes channels; 1 for binary)."""
 
     def __init__(self, in_channels=3, num_classes=1, base_channels=32, dropout=0.1):
         super().__init__()
